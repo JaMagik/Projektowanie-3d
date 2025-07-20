@@ -1,23 +1,17 @@
 import { Stage, Layer, Rect, Line } from 'react-konva';
-import { GRID, HALF, PPM, CANVAS, MIN, MAX } from '../../constants';
+import { GRID, HALF, PPM, CANVAS,  } from '../../constants';
 import { useStore } from '../../store';
 
-const px = (m: number) => m * PPM;   // metry → piksele
-const m  = (p: number) => p / PPM;   // piksele → metry
-
-/** dociąga wartość do rastra i przycina do granic siatki */
-function snapClamp(valuePx: number) {
-  const snap = Math.round((valuePx + px(HALF)) / px(GRID)) * GRID; // środek pola
-  return Math.max(MIN, Math.min(MAX, snap));
-}
+const px = (m: number) => m * PPM;
+const m  = (p: number) => p / PPM;
 
 export default function Editor2D() {
   const {
     modules, addModule, moveModule,
-    select, selectedId, taken,
+    select, selectedId, taken, inside,
   } = useStore();
 
-  /* rysowanie siatki */
+  /* siatka */
   const grid: number[] = [];
   for (let x = 0; x <= CANVAS; x += px(GRID)) grid.push(x, 0, x, CANVAS);
   for (let y = 0; y <= CANVAS; y += px(GRID)) grid.push(0, y, CANVAS, y);
@@ -32,11 +26,9 @@ export default function Editor2D() {
       style={{ background: '#f5f5f5' }}
       onDblClick={(e) => {
         const p = e.target.getStage()?.getPointerPosition(); if (!p) return;
-
-        const x = snapClamp(p.x);
-        const y = snapClamp(p.y);
-
-        if (!taken(x, y)) addModule(x, y);
+        const x = Math.floor(m(p.x) / GRID) * GRID + HALF;
+        const y = Math.floor(m(p.y) / GRID) * GRID + HALF;
+        addModule(x, y);
       }}
       onMouseDown={(e) => {
         if (e.target === e.target.getStage()) select(null);
@@ -44,7 +36,6 @@ export default function Editor2D() {
     >
       <Layer>
         <Line points={grid} stroke="#e5e5e5" strokeWidth={1} />
-
         {modules.map((mod) => (
           <Rect
             key={mod.id}
@@ -61,12 +52,11 @@ export default function Editor2D() {
             onClick={() => select(mod.id)}
             onDragEnd={(e) => {
               const { x, y } = e.target.position();
+              const snapX = Math.round(m(x + HALF) / GRID) * GRID;
+              const snapY = Math.round(m(y + HALF) / GRID) * GRID;
 
-              const snapX = snapClamp(x);
-              const snapY = snapClamp(y);
-
-              if (taken(snapX, snapY, mod.id)) {
-                revert(e.target, mod);                 // kolizja
+              if (!inside(snapX, snapY) || taken(snapX, snapY, mod.id)) {
+                revert(e.target, mod);
                 return;
               }
               moveModule(mod.id, snapX, snapY);
