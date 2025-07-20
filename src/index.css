@@ -1,0 +1,23 @@
+/* src/index.css  – minimalny reset + kilka klas pomocniczych */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+/* szary pasek pod glówny layout */
+.sidebar {
+  width: 480px;
+  border-right: 1px solid #d1d5db;  /* neutral-300 */
+}
+
+.canvas-2d {
+  background: #f5f5f5;              /* neutral-100 */
+}
+
+.canvas-3d {
+  flex: 1;
+  background: #111;                 /* neutral-900 */
+  display: flex;
+}
